@@ -436,7 +436,7 @@ class GDIp
 			if isObject( brushOrColor )
 				ret := DllCall( "gdiplus\GdipCreatePen2", "UPtr", brushOrColor.getpBrush(), "float", width, "int", 2, "UPtr*", pPen )
 			else
-				ret := DllCall( "gdiplus\GdipCreatePen1", "UInt", ARGB, "float", width, "Int", 2, "UPtr*", pPen )
+				ret := DllCall( "gdiplus\GdipCreatePen1", "UInt", brushOrColor, "float", width, "Int", 2, "UPtr*", pPen )
 			if ret
 				return ret
 			This.ptr := pPen
@@ -478,7 +478,7 @@ class GDIp
 		
 		setColor( color )
 		{
-			return DllCall( "gdiplus\GdipSetPenColor", "UPtr", Ths.ptr, "UInt", color )
+			return DllCall( "gdiplus\GdipSetPenColor", "UPtr", This.ptr, "UInt", color )
 		}
 		
 		getColor()
