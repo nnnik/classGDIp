@@ -18,4 +18,6 @@ With the exception of those that make no sense in AutoHotkeys context.
 * __class nesting__ all classes should either be nested within the class GDIp or any of it's subclasses.
 * __the ptr field and getp*ObjectType*__ Any class that represents a GDIp Object should store it's objects pointer in `This.ptr`. 
 It should also return this pointer upon calling `getpObjectType()` where `ObjectType` get's replaced by the Objects type ( e.g. `getpBitmap()` for Bitmaps ). 
-* __parameters__ The biggest issue is making parameters both consistent and easy to use. Parameters should represent attributes that can be set e.g. Size
+* __parameters__ The biggest issue is making parameters both consistent and easy to use. Parameters should represent attributes that can be set e.g. Size. 
+If the parameter covers more than one value combine them to an array. Never split parameters. Never use byref or global.
+* __getters and setters__ Every attribute that needs to be set or get dynamically shouls be set and get by using setter and getter methods. 

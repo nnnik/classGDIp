@@ -64,21 +64,15 @@ class GDIp
 	class Bitmap
 	{
 		
-		__New( filePathOrW, h = "" )
+		__New( filePathOrSize )
 		{
-			if fileExist( filePathOrW )
-			{
-				ret := DllCall( "gdiplus\GdipCreateBitmapFromFile", "WStr", filePathOrW, "Ptr*", pBitmap )
-				DllCall( "gdiplus\GdipGetImageWidth",  "Ptr", pBitmap, "UInt*", w )
-				DllCall( "gdiplus\GdipGetImageHeight", "Ptr", pBitmap, "UInt*", h )
-			}
-			else if ( ( w := filePathOrW ) > 0 && h > 0 )
-				ret := DllCall( "gdiplus\GdipCreateBitmapFromScan0", "UInt", w, "UInt", h, "UInt", 0, "UInt", 0x26200A, "Ptr", 0, "Ptr*", pBitmap )
-			if !( ret = 0 )
+			if isObject( filePathOrSize )
+				ret := DllCall( "gdiplus\GdipCreateBitmapFromScan0", "UInt", filePathOrSize.1, "UInt", filePathOrSize.2, "UInt", 0, "UInt", 0x26200A, "Ptr", 0, "Ptr*", pBitmap )
+			else if fileExist( filePathOrSize )
+				ret := DllCall( "gdiplus\GdipCreateBitmapFromFile", "WStr", filePathOrSize, "Ptr*", pBitmap )
+			if ret
 				return ret
 			This.ptr := pBitmap
-			This.w   := w
-			This.h   := h
 			GDIp.registerObject( This )
 		}
 		
@@ -107,7 +101,9 @@ class GDIp
 		
 		getSize()
 		{
-			return [ This.w, This.h ]
+			DllCall( "gdiplus\GdipGetImageWidth",  "Ptr", pBitmap, "UInt*", w )
+			DllCall( "gdiplus\GdipGetImageHeight", "Ptr", pBitmap, "UInt*", h )
+			return [ w, h ]
 		}
 		
 		saveToFile( fileName )
@@ -220,12 +216,12 @@ class GDIp
 		
 		fillRectangle( brush, rect )
 		{
-			return DllCall( "gdiplus\GdipFillRectangle", "Ptr", This.ptr, "Ptr", isObject( brush ) ? brush.getpBrush() : brush, "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
+			return DllCall( "gdiplus\GdipFillRectangle", "Ptr", This.ptr, "Ptr", ? brush.getpBrush(), "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
 		}
 		
 		fillElipse( brush, rect )
 		{
-			return DllCall("gdiplus\GdipFillEllipse", "Ptr", This.ptr, "Ptr", isObject( brush ) ? brush.getpBrush() : brush, "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
+			return DllCall("gdiplus\GdipFillEllipse", "Ptr", This.ptr, "Ptr", brush.getpBrush(), "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
 		}
 		
 		/*
@@ -244,9 +240,40 @@ class GDIp
 				NumPut( point.1, pointBuffer, pointNr * 8 - 8, "float" )
 				NumPut( point.2, pointBuffer, pointNr * 8 - 4, "float" )
 			}
-			return DllCall( "gdiplus\GdipFillPolygon", "Ptr", This.ptr, "Ptr", isObject( brush ) ? brush.getpBrush() : brush, "Ptr", &pointBuffer, "int", points.Length(), "int", fillMode )
+			return DllCall( "gdiplus\GdipFillPolygon", "Ptr", This.ptr, "Ptr", brush.getpBrush(), "Ptr", &pointBuffer, "int", points.Length(), "int", fillMode )
 		}
 		
+		/*
+			Brush:	the brush used to fill the Pie
+			
+			Rect:     a 4 value array defining the Area the pie occupies
+			
+			Angles:   a 2 value array defining the starting and the ending angle of the pie
+		*/
+		
+		fillPie( brush, rect, angles )
+		{
+			return DllCall("gdiplus\GdipFillPie", "Ptr", This.ptr, "Ptr", brush.getpBrush(), "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4, "float", angles.1, "float", angles.2 )
+		}
+		
+		/*
+			Pen:		the pen used to draw the line
+			
+			Points:	the starting and the end point in a 2x2 array
+			
+		*/
+		
+		drawLine( pen, points )
+		{
+			return DllCall( "gdiplus\GdipDrawLine", "UPtr", This.ptr, "UPtr", pen.getpPen(), "float", points.1.1, "float", points.1.2, "float", points.2.1, "float", points.2.2 )
+		}
+		
+		drawLines( pen, points )
+		{
+			points := points.clone()
+			Loop % points.Length() - 1
+				This.drawLine( pen, points ), points.removeAt( 1 )
+		}
 		
 	}
 	
@@ -278,7 +305,7 @@ class GDIp
 			DllCall( "gdiplus\GdipSetImageAttributesColorMatrix", "UPtr", This.ptr, "Int", 1, "Int", 1, "UPtr", &colourMatrix, "UPtr", 0, "Int", 0 )
 		}
 		
-		getpImageAttribute()
+		getpImageAttributes()
 		{
 			return This.ptr
 		}
@@ -393,12 +420,82 @@ class GDIp
 			getColor()
 			{
 				VarSetCapacity( colors, 8, 0 )
-				DllCall( "gdiplus\GdipGetLineColors", "UPtr", This.ptr, "Ptr", colors )
+				DllCall( "gdiplus\GdipGetLineColors", "UPtr", This.ptr, "Ptr", &colors )
 				return [ numGet( colors, 0, "UInt" ), numGet( colors, 4, "UInt" ) ]
 			}
 			
 		}
 		
+		
+	}
+	
+	class Pen
+	{
+		__New( brushOrColor, width )
+		{
+			if isObject( brushOrColor )
+				ret := DllCall( "gdiplus\GdipCreatePen2", "UPtr", brushOrColor.getpBrush(), "float", width, "int", 2, "UPtr*", pPen )
+			else
+				ret := DllCall( "gdiplus\GdipCreatePen1", "UInt", ARGB, "float", width, "Int", 2, "UPtr*", pPen )
+			if ret
+				return ret
+			This.ptr := pPen
+			GDIp.registerObject( This )
+		}
+		
+		__Delete()
+		{
+			DllCall( "gdiplus\GdipDeletePen", "UPtr", This.ptr )
+			GDIp.unregisterObject( This )
+			This.base := ""
+		}
+		
+		clone()
+		{
+			ret := DllCall( "gdiplus\GdipClonePen", "UPtr", This.ptr, "UPtr*", pPen )
+			if ret
+				return ret
+			newPen := { ptr: pPen ,base: GDIp.pen }
+			GDIp.registerObject( newPen )
+			return newPen
+		}
+		
+		getpPen()
+		{
+			return This.ptr
+		}
+		
+		setWidth( width )
+		{
+			return DllCall( "gdiplus\GdipSetPenWidth", "UPtr", This.ptr, "float", width )
+		}
+		
+		getWidth()
+		{
+			DllCall( "gdiplus\GdipGetPenWidth", "UPtr", This.ptr, "float*", width )
+			return width
+		}
+		
+		setColor( color )
+		{
+			return DllCall( "gdiplus\GdipSetPenColor", "UPtr", Ths.ptr, "UInt", color )
+		}
+		
+		getColor()
+		{
+			DllCall( "gdiplus\GdipGetPenColor", "UPtr", This.ptr, "UInt*", color )
+			return color
+		}
+		
+		setBrush( brush )
+		{
+			return DllCall( "gdiplus\GdipSetPenBrushFill", "UPtr", This.ptr, "UPtr", brush.getpBrush() )
+		}
+		
+		getBrush()
+		{
+			return
+		}
 		
 	}
 	
