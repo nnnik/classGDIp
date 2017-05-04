@@ -216,7 +216,7 @@ class GDIp
 		
 		fillRectangle( brush, rect )
 		{
-			return DllCall( "gdiplus\GdipFillRectangle", "Ptr", This.ptr, "Ptr", ? brush.getpBrush(), "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
+			return DllCall( "gdiplus\GdipFillRectangle", "Ptr", This.ptr, "Ptr", brush.getpBrush(), "float", rect.1, "float", rect.2, "float", rect.3, "float", rect.4 )
 		}
 		
 		fillElipse( brush, rect )
