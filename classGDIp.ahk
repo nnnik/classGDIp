@@ -275,6 +275,43 @@ class GDIp
 				This.drawLine( pen, points ), points.removeAt( 1 )
 		}
 		
+		/*
+			drawString:	Writes some text with a specified font, rectangle, stringFormat and Brush on the Graphics
+			
+			string:		The text you want to write.
+			
+			font:		The font you want to use. Has to be a GDIp.Font Object
+			
+			rect:		A 4 value array defining [ x, y, w, h ] of the area you want to write to.
+			
+			stringFormat:	Some options of the Text like the text direction. Has to be a GDIp.StringFormat Object
+			
+			brush:		Defines the color of the text. Has to be a GDI+ Brush Object. ( currently GDIp.SolidBrush & GDIp.LinearGradientBrush ) 
+ 			
+		*/
+		
+		drawString( string, font, rect, stringFormat, brush )
+		{
+			static rectF := "", init := VarSetCapacity( rectF, 16, 0 )
+			For each, entry in rect
+				NumPut( entry, rectF, each * 4 - 4, "float" )
+			return DllCall( "gdiplus\GdipDrawString", "UPtr", This.ptr, "WStr", string, "Int", -1, "UPtr", font.getpFont(), "UPtr", &rectF, "UPtr", stringFormat.getpStringFormat(), "UPtr", brush.getpBrush() )
+		}
+		
+		measureString( string, font, rect, stringFormat )
+		{
+			static inputRectF := "", outputRectF := VarSetCapacity( inputRectF, 16, 0 ), init := VarSetCapacity( outputRectF, 16, 0 )
+			For each, entry in rect
+				NumPut( entry, inputRectF, each * 4 - 4, "float" )
+			ret := DllCall( "gdiplus\GdipMeasureString", "UPtr", This.ptr, "WStr", string, "Int", -1, "UPtr", font.getpFont(), "UPtr", &rectF, "UPtr", stringFormat.getpStringFormat(), "UPtr", &outputRectF, "UInt*", codePointsFitted, "UInt*", linesFitted )
+			if ret
+				return ret
+			outData := { rect: [], lines: linesFitted, chars: codePointsFitted }
+			Loop, 4
+				outData.rect.Push( numGet( outputRectF, A_Index * 4 -4, "float" ) )
+			return outData
+		}
+		
 	}
 	
 	class ImageAttributes
@@ -511,9 +548,88 @@ class GDIp
 			GDIp.registerObject( This )
 		}
 		
+		getpFontFamily()
+		{
+			return This.ptr
+		}
+		
 		__Delete()
 		{
 			DllCall( "gdiplus\GdipDeleteFontFamily", "UPtr", This.ptr )
+			GDIp.unregisterObject( This )
+			This.base := ""
+		}
+		
+	}
+	
+	class Font
+	{
+		
+		__New( fontFamilyOrDC, size = "" )
+		{
+			if ( hDC := fontFamilyOrDC.gethDC() )
+				ret := DllCall( "gdiplus\GdipCreateFontFromDC", "UPtr", hDC, "UPtr*", pFont )
+			else
+				ret := DllCall( "gdiplus\GdipCreateFont", "UPtr", fontFamilyOrDC.getpFontFamily(), "float", size, "UInt", 0, "UInt", 2, "UPtr*", pFont )
+			if ret
+				return ret
+			This.ptr := pFont
+			GDIp.registerObject( This )
+		}
+		
+		getpFont()
+		{
+			return This.ptr
+		}
+		
+		__Delete()
+		{
+			DllCall( "gdiplus\GdipDeleteFont", "UPtr", This.ptr )
+			GDIp.unregisterObject( This )
+			This.base := ""
+		}
+		
+	}
+	
+	class StringFormat
+	{
+		
+		/*
+			formatFlags: Defines some settings of the StringFormat object 
+			typedef enum  {
+				StringFormatFlagsDirectionRightToLeft    = 0x00000001,
+				StringFormatFlagsDirectionVertical       = 0x00000002,
+				StringFormatFlagsNoFitBlackBox           = 0x00000004,
+				StringFormatFlagsDisplayFormatControl    = 0x00000020,
+				StringFormatFlagsNoFontFallback          = 0x00000400,
+				StringFormatFlagsMeasureTrailingSpaces   = 0x00000800,
+				StringFormatFlagsNoWrap                  = 0x00001000,
+				StringFormatFlagsLineLimit               = 0x00002000,
+				StringFormatFlagsNoClip                  = 0x00004000 
+			} StringFormatFlags;
+			
+			langId: Defines the language this StringFormat Object should use.
+			I don't actually know any besides 0 which is LANG_NEUTRAL and represents the users language - further research is necessary.
+			
+		*/
+		
+		__New( formatFlags := 0, langId := 0 )
+		{
+			ret := DllCall( "gdiplus\GdipCreateStringFormat", "UInt", formatFlags, "UShort", langId, "UPtr*", pStringFormat )
+			if ret
+				return ret
+			This.ptr := pStringFormat
+			GDIp.registerObject( This )
+		}
+		
+		getpStringFormat()
+		{
+			return This.ptr
+		}
+		
+		__Delete()
+		{
+			DllCall( "gdiplus\GdipDeleteStringFormat", "UPtr", This.ptr )
 			GDIp.unregisterObject( This )
 			This.base := ""
 		}
