@@ -312,7 +312,7 @@ class GDIp
 		
 	}
 	
-	class Brush
+	class SolidBrush
 	{
 		
 		__New( color )
@@ -355,77 +355,75 @@ class GDIp
 			return color
 		}
 		
+	}
+	
+	class LinearGradientBrush extends GDIp.SolidBrush
+	{
 		
-		class LinearGradientBrush extends GDIp.Brush
+		/*
+			creates a new LinearGradientBrush
+			color: 				2 ARGB colours in a Array
+			
+			rectOrPoints:   		specifies the size of the gradient to be drawn
+			rect:			4 array values in pixels that describe the size of the gradient thats to be painted
+			points:			2x2 array values that define the size and direction of the gradient
+			
+			
+			gradientTypeOrAngle:	specifies the direction of the gradient ( only used with Rect )
+			gradientType:		one of 4 values describing the directions from 0 - 3 : 
+			Horizontal = 0 Vertical = 1 ForwardDiagonal = 2 BackwardDiagonal = 3
+			angle:			any value not from 0-3 or any float ( e.g. 1.000 ) will be treated as an angle to describe the direction
+			
+			wrapMode:				specifies how the pattern is repeated once it exceeds the defined space in rectOrPoints
+			Repeat = 0 RepeatFlipX = 1 RepeatFlipY = 2 ReeatFlipXY = 3 Clamp = 4
+			
+		*/
+		
+		__New( color, rectOrPoints, gradientTypeOrAngle := 0 , wrapMode := 0 )
 		{
-			
-			/*
-				creates a new LinearGradientBrush
-				color: 				2 ARGB colours in a Array
-				
-				rectOrPoints:   		specifies the size of the gradient to be drawn
-				rect:			4 array values in pixels that describe the size of the gradient thats to be painted
-				points:			2x2 array values that define the size and direction of the gradient
-				
-				
-				gradientTypeOrAngle:	specifies the direction of the gradient ( only used with Rect )
-				gradientType:		one of 4 values describing the directions from 0 - 3 : 
-				Horizontal = 0 Vertical = 1 ForwardDiagonal = 2 BackwardDiagonal = 3
-				angle:			any value not from 0-3 or any float ( e.g. 1.000 ) will be treated as an angle to describe the direction
-				
-				wrapMode:				specifies how the pattern is repeated once it exceeds the defined space in rectOrPoints
-				Repeat = 0 RepeatFlipX = 1 RepeatFlipY = 2 ReeatFlipXY = 3 Clamp = 4
-				
-			*/
-			
-			__New( color, rectOrPoints, gradientTypeOrAngle := 0 , wrapMode := 0 )
+			static rectOrPointF := "", Init := VarSetCapacity( rectOrPointF, 16, 0 )
+			if ( rectOrPoints.MaxIndex() = 2 )
 			{
-				static rectOrPointF := "", Init := VarSetCapacity( rectOrPointF, 16, 0 )
-				if ( rectOrPoints.MaxIndex() = 2 )
-				{
-					for pointNr, point in rectOrPoints
-						for dimension, value in point
-							NumPut( value, rectOrPointF, pointNr * 8 + dimension * 4 - 12, "float" )
-					ret := DllCall( "gdiplus\GdipCreateLineBrush", "UPtr", &rectOrPointF, "UPtr", &rectOrPointF + 8, "UInt", color.1, "UInt", color.2, "UInt", wrapMode, "UPtr*", pBrush )
-				}
-				else 
-				{
-					for dimension, value in rectOrPoints
-						NumPut( value, rectOrPointF, dimension * 4 - 4, "float" )
-					if ( mod( gradientTypeOrAngle, 4 ) . "" == Round( gradientTypeOrAngle ) . "" ) ;I felt so cool when I found this solution
-						ret := DllCall( "gdiplus\GdipCreateLineBrushFromRect", "UPtr", &rectOrPointF, "UInt", color.1, "UInt", color.2, "UInt", gradientTypeOrAngle, "UInt", wrapMode, "UPtr*", pBrush )
-					else
-						ret := DllCall( "gdiplus\GdipCreateLineBrushFromRectWithAngle", "UPtr", &rectOrPointF, "UInt", color.1, "UInt", color.2, "double", gradientTypeOrAngle, "UInt", 0, "UInt", wrapMode, "UPtr*", pBrush ) ; I don't really know what the 0 parameter does here
-				}
-				if ret
-					return ret
-				This.ptr := pBrush
-				GDIp.registerObject( This )
+				for pointNr, point in rectOrPoints
+					for dimension, value in point
+						NumPut( value, rectOrPointF, pointNr * 8 + dimension * 4 - 12, "float" )
+				ret := DllCall( "gdiplus\GdipCreateLineBrush", "UPtr", &rectOrPointF, "UPtr", &rectOrPointF + 8, "UInt", color.1, "UInt", color.2, "UInt", wrapMode, "UPtr*", pBrush )
 			}
-			
-			__Delete()
+			else 
 			{
-				GDIp.unregisterObject( This )
-				DllCall( "gdiplus\GdipDeleteBrush", "UPtr", This.ptr )
-				This.base := ""
+				for dimension, value in rectOrPoints
+					NumPut( value, rectOrPointF, dimension * 4 - 4, "float" )
+				if ( mod( gradientTypeOrAngle, 4 ) . "" == Round( gradientTypeOrAngle ) . "" ) ;I felt so cool when I found this solution
+					ret := DllCall( "gdiplus\GdipCreateLineBrushFromRect", "UPtr", &rectOrPointF, "UInt", color.1, "UInt", color.2, "UInt", gradientTypeOrAngle, "UInt", wrapMode, "UPtr*", pBrush )
+				else
+					ret := DllCall( "gdiplus\GdipCreateLineBrushFromRectWithAngle", "UPtr", &rectOrPointF, "UInt", color.1, "UInt", color.2, "double", gradientTypeOrAngle, "UInt", 0, "UInt", wrapMode, "UPtr*", pBrush ) ; I don't really know what the 0 parameter does here
 			}
-			
-			setColor( color )
-			{
-				color1 := color.1
-				color2 := color.2
-				DllCall( "gdiplus\GdipSetLineColors", "UPtr", This.ptr, "UInt", color1, "UInt", color2 )
-			}
-			
-			getColor()
-			{
-				VarSetCapacity( colors, 8, 0 )
-				DllCall( "gdiplus\GdipGetLineColors", "UPtr", This.ptr, "Ptr", &colors )
-				return [ numGet( colors, 0, "UInt" ), numGet( colors, 4, "UInt" ) ]
-			}
-			
+			if ret
+				return ret
+			This.ptr := pBrush
+			GDIp.registerObject( This )
 		}
 		
+		__Delete()
+		{
+			GDIp.unregisterObject( This )
+			DllCall( "gdiplus\GdipDeleteBrush", "UPtr", This.ptr )
+			This.base := ""
+		}
+		
+		setColor( color )
+		{
+			color1 := color.1
+			color2 := color.2
+			DllCall( "gdiplus\GdipSetLineColors", "UPtr", This.ptr, "UInt", color1, "UInt", color2 )
+		}
+		
+		getColor()
+		{
+			VarSetCapacity( colors, 8, 0 )
+			DllCall( "gdiplus\GdipGetLineColors", "UPtr", This.ptr, "Ptr", &colors )
+			return [ numGet( colors, 0, "UInt" ), numGet( colors, 4, "UInt" ) ]
+		}
 		
 	}
 	
@@ -434,7 +432,7 @@ class GDIp
 		__New( brushOrColor, width )
 		{
 			if isObject( brushOrColor )
-				ret := DllCall( "gdiplus\GdipCreatePen2", "UPtr", brushOrColor.getpBrush(), "float", width, "int", 2, "UPtr*", pPen )
+				ret := DllCall( "gdiplus\GdipCreatePen2", "UPtr", brushOrColor.getpBrush(), "float", width, "int", 2, "UPtr*", pPen ), This.brush := brushOrColor
 			else
 				ret := DllCall( "gdiplus\GdipCreatePen1", "UInt", brushOrColor, "float", width, "Int", 2, "UPtr*", pPen )
 			if ret
@@ -487,14 +485,37 @@ class GDIp
 			return color
 		}
 		
-		setBrush( brush )
+		setBrush( brush = "" )
 		{
-			return DllCall( "gdiplus\GdipSetPenBrushFill", "UPtr", This.ptr, "UPtr", brush.getpBrush() )
+			if ( This.hasKey( "brush" ) && brush )
+				This.brush := brush
+			return DllCall( "gdiplus\GdipSetPenBrushFill", "UPtr", This.ptr, "UPtr", THis.brush.getpBrush() )
 		}
 		
 		getBrush()
 		{
-			return
+			return This.brush
+		}
+		
+	}
+	
+	class FontFamily
+	{
+		
+		__New( name )
+		{
+			ret := DllCall( "gdiplus\GdipCreateFontFamilyFromName", "WStr", name, "UPtr", 0, "UPtr*", pFontFamily )
+			if ret
+				return ret
+			This.ptr := pFontFamily
+			GDIp.registerObject( This )
+		}
+		
+		__Delete()
+		{
+			DllCall( "gdiplus\GdipDeleteFontFamily", "UPtr", This.ptr )
+			GDIp.unregisterObject( This )
+			This.base := ""
 		}
 		
 	}

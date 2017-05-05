@@ -15,7 +15,7 @@ testGraphics := hDC.getGraphics()
 testGraphics.setSmoothingMode( 4 )
 testGraphics.setInterpolationMode( 7 )
 
-testBrush    := new GDIp.Brush.LinearGradientBrush( [ 0, 0 ], [ 0, 0, size.1 / 2, size.2 / 2 ], 0, 1 )
+testBrush    := new GDIp.LinearGradientBrush( [ 0, 0 ], [ 0, 0, size.1 / 2, size.2 / 2 ], 0, 1 )
 testPen      := new GDIp.Pen( testBrush, 5 )
 testPen2     := new GDIp.Pen( 0xFF000000, 10 )
 GoTo,Paint
@@ -24,7 +24,7 @@ F5::
 Paint:
 Critical
 testBrush.setColor( color := [ randomColor(), randomColor() ] )
-testPen.setBrush( testBrush )
+testPen.setBrush()
 testPen2.setColor( color.1 )
 testGraphics.clear( 0xFF000000 )
 testGraphics.drawLines( testPen , [ [ 0, 0 ],[ size.1 / 2 ,size.2 / 2 ], [ size.1, 0 ] ] )
