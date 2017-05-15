@@ -38,7 +38,7 @@
 	
 	static storage 	:= {}
 	static storage2	:= {}
-	static connectBase	:= { __Call:indirectReference.Call, __Set:indirectReference.Set, __Get:indirectReference.Get, __New:indirectReference.New, __Delete:indirectReference.Delete }
+	static connectBase	:= { __Call:indirectReference.Call, __Set:indirectReference.Set, __Get:indirectReference.Get, __New:indirectReference.New, __Delete:indirectReference.Delete, _NewEnum:"" }
 	
 	Call( functionName = "", parameters* )
 	{
@@ -106,6 +106,7 @@ class directReference
 	{
 		if directReference.storage.hasKey( &newIndirectReference )
 			return Object( directReference.storage[ &newIndirectReference ] )
+		indirectReference.saveRemoveFromStorage.Call( newIndirectReference )
 	}
 	
 	enter( newIndirectReference, Object )
@@ -141,6 +142,8 @@ class directReference
 		pObj := directReference.storage[ &This ]
 		directReference.storage.Delete( &This )
 		directReference.storage2[ pObj ].Delete( &This )
+		if !directReference.storage2[ pObj ]._newEnum()._Next( each, val )
+			directReference.storage2.Delete( pObj )
 		return ret
 	}
 	
