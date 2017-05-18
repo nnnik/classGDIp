@@ -101,8 +101,8 @@ class GDIp
 		
 		getSize()
 		{
-			DllCall( "gdiplus\GdipGetImageWidth",  "Ptr", pBitmap, "UInt*", w )
-			DllCall( "gdiplus\GdipGetImageHeight", "Ptr", pBitmap, "UInt*", h )
+			DllCall( "gdiplus\GdipGetImageWidth",  "Ptr", This.ptr, "UInt*", w )
+			DllCall( "gdiplus\GdipGetImageHeight", "Ptr", This.ptr, "UInt*", h )
 			return [ w, h ]
 		}
 		
