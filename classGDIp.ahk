@@ -184,6 +184,18 @@ class GDIp
 			return DllCall( "gdiplus\GdipSetInterpolationMode", "Ptr", This.ptr, "Int", interpolationMode )
 		}
 		
+		;TextRenderingHintSystemDefault              = 0,
+		;TextRenderingHintSingleBitPerPixelGridFit   = 1,
+		;TextRenderingHintSingleBitPerPixel          = 2,
+		;TextRenderingHintAntiAliasGridFit           = 3,
+		;TextRenderingHintAntiAlias                  = 4,
+		;TextRenderingHintClearTypeGridFit           = 5 
+		
+		setTextRenderingHint( textRenderingHint )
+		{
+			return DllCall( "gdiplus\GdipSetTextRenderingHint", "Ptr", This.ptr, "UInt", textRenderingHint )
+		}
+		
 		clear( color = 0 )
 		{
 			return DllCall("gdiplus\GdipGraphicsClear", "Ptr", This.ptr, "UInt", color )
